@@ -49,12 +49,12 @@ def add_movie(user_id):
     # Extract dat from the form fields
     title = request.form.get('title')
     year = request.form.get('year')
-    rating = request.form.get('rating')
+    director = request.form.get('director')
 
-    if title and year and rating:
+    if title and year and director:
         # Create a new Movie object from our models
         from models import Movie
-        new_movie = Movie(title=title, year=int(year), rating=float(rating), user_id=user_id)
+        new_movie = Movie(title=title, year=int(year), director=director, user_id=user_id)
         # Send it to the DataManager to save it
         data_manager.add_movie(new_movie)
 

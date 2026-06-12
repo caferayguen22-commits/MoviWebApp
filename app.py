@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, render_template, request, redirect, url_for
 from data_manager import DataManager
 from models import db
 
@@ -18,15 +18,25 @@ db.init_app(app)
 # Initialize the DataManager
 data_manager = DataManager()
 
-# Base test route
+# UPDATED: Home route now renders index.html with all users
 @app.route('/')
-def home():
-    return "Welcome to MoviWeb App!"
+def index():
+    users = data_manager.get_user()
+    return render_template('index.html', users=users)
 
-@app.route('/users')
-def list_users():
-    users = data_manager.get_users()
-    return str(users)  # Temporarily returning users as a string
+# NEW: Route to handle form submission for creating a user
+@app.route('/users', methods=['POST'])
+def add_user():
+    user_name = request.form.get('name')
+    if user_name:
+        data_manager.create_user(user_name)
+    return redirect(url_for('index'))
+
+# DUMMY ROUTE: Just so url_for('list_user_movies') in HTML doesn't crash right now
+@app.route('/users/<int:user_id>')
+def list_user_movies(user_id):
+    return f"Future movie list for user {user_id}"
+
 
 
 # Create database tables and run the application

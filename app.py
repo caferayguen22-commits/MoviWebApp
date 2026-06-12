@@ -32,10 +32,35 @@ def add_user():
         data_manager.create_user(user_name)
     return redirect(url_for('index'))
 
-# DUMMY ROUTE: Just so url_for('list_user_movies') in HTML doesn't crash right now
+# UPDATED: Real route to list all movies of a specific user
 @app.route('/users/<int:user_id>')
 def list_user_movies(user_id):
-    return f"Future movie list for user {user_id}"
+    # We simply use the exact same logic as in our DataManager to get the user by ID
+    from models import User
+    user = User.query.get(user_id)
+
+    # Use DataManager to get all movies for this user through the Stargate
+    movies = data_manager.get_movies(user_id)
+    return render_template('movies.html', user=user, movies=movies)
+
+# NEW: Route to handle form submission for adding a movie to a user
+@app.route('/users/<int:user_id>/movies', methods=['POST'])
+def add_movie(user_id):
+    # Extract dat from the form fields
+    title = request.form.get('title')
+    year = request.form.get('year')
+    rating = request.form.get('rating')
+
+    if title and year and rating:
+        # Create a new Movie object from our models
+        from models import Movie
+        new_movie = Movie(title=title, year=int(year), rating=float(rating), user_id=user_id)
+        # Send it to the DataManager to save it
+        data_manager.add_movie(new_movie)
+
+    # Redirect back to the user's movie list page
+    return redirect(url_for('list_user_movies', user_id=user_id))
+
 
 
 

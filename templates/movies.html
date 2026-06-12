@@ -1,34 +1,73 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Favorite Movies of User {{ user.name }}</h1>
+<div class="is-flex is-justify-content-between is-align-items-center mb-5">
+    <h1 class="title is-2">🎬 {{ user.name }}'s Movies</h1>
+    <a href="{{ url_for('index') }}" class="button is-light">🏠 Back to Users</a>
+</div>
 
-    <ul class="movie-list">
-        {% for movie in movies %}
-        <li class="movie-entry">
-            <strong>{{ movie.title }}</strong> ({{ movie.year }}) - Directed by: {{ movie.director }}
-        </li>
-        {% else %}
-        <li>This user doesn't have any favorite movies yet.</li>
-        {% endfor %}
-    </ul>
+<hr>
 
-    <hr>
+<h2 class="title is-4">Movie List</h2>
+{% if movies %}
+    <div class="table-container">
+        <table class="table is-striped is-hoverable is-fullwidth">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Director</th>
+                    <th>Year</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movie in movies %}
+                    <tr>
+                        <td class="has-text-weight-bold">{{ movie.title }}</td>
+                        <td>{{ movie.director }}</td>
+                        <td><span class="tag is-info is-light">{{ movie.year }}</span></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="notification is-warning is-light">
+        This user hasn't added any favorite movies yet.
+    </div>
+{% endif %}
 
-    <h2>Add a New Movie</h2>
-    <form action="{{ url_for('add_movie', user_id=user.id) }}" method="post">
-        <label for="title">Movie Title:</label>
-        <input type="text" id="title" name="title" required placeholder="e.g. Inception">
-        
-        <label for="year">Year:</label>
-        <input type="number" id="year" name="year" required placeholder="e.g. 2010">
-        
-        <label for="director">Director:</label>
-        <input type="text" id="director" name="director" required placeholder="e.g. Christopher Nolan">
+<hr>
 
-        <button type="submit">Add Movie</button>
-    </form>
+<h2 class="title is-4">Add a New Movie</h2>
+<form action="{{ url_for('add_movie', user_id=user.id) }}" method="post">
+    <div class="field">
+        <label class="label" for="title">Movie Title</label>
+        <div class="control">
+            <input class="input" type="text" id="title" name="title" required placeholder="e.g. Inception">
+        </div>
+    </div>
 
-    <br>
-    <a href="{{ url_for('index') }}">⬅️ Back to Users</a>
+    <div class="columns">
+        <div class="column">
+            <div class="field">
+                <label class="label" for="director">Director</label>
+                <div class="control">
+                    <input class="input" type="text" id="director" name="director" required placeholder="e.g. Christopher Nolan">
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label" for="year">Release Year</label>
+                <div class="control">
+                    <input class="input" type="number" id="year" name="year" required placeholder="e.g. 2010">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="control mt-4">
+        <button type="submit" class="button is-primary is-fullwidth">Add Movie</button>
+    </div>
+</form>
 {% endblock %}

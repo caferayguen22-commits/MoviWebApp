@@ -1,22 +1,32 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Users</h1>
-    
-    <ul class="user-list">
-        {% for user in users %}
-        <li class="user-entry"> 
-            <a href="{{ url_for('list_user_movies', user_id=user.id) }}" class="btn">{{ user.name }}</a>
-        </li>
-        {% endfor %}
-    </ul>
+<h1 class="title is-2 has-text-centered">🍿 Movie Web App</h1>
+<p class="subtitle is-5 has-text-centered has-text-grey">Manage your favorite movie collections</p>
 
-    <hr>
+<hr>
 
-    <h2>Add a New User</h2>
-    <form action="{{ url_for('add_user') }}" method="post">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required placeholder="Enter username...">
-        <button type="submit">Create User</button>
-    </form>
+<h2 class="title is-4">User Directory</h2>
+<div class="buttons">
+    {% for user in users %}
+        <a href="{{ url_for('list_user_movies', user_id=user.id) }}" class="button is-link is-outlined is-medium">
+            👤 {{ user.name }}
+        </a>
+    {% endfor %}
+</div>
+
+<hr>
+
+<h2 class="title is-4">Add a New User</h2>
+<form action="{{ url_for('index') }}" method="post">
+    <div class="field">
+        <label class="label" for="name">User Name</label>
+        <div class="control">
+            <input class="input" type="text" id="name" name="name" required placeholder="e.g. John Doe">
+        </div>
+    </div>
+    <div class="control">
+        <button type="submit" class="button is-primary is-fullwidth">Create User</button>
+    </div>
+</form>
 {% endblock %}

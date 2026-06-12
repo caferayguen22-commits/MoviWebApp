@@ -54,18 +54,31 @@ def add_movie(user_id):
     if title and year and director:
         # Create a new Movie object from our models
         from models import Movie
-        new_movie = Movie(title=title, year=int(year), director=director, user_id=user_id)
-        # Send it to the DataManager to save it
-        data_manager.add_movie(new_movie)
+        try:
+            new_movie = Movie(title=title, year=int(year), director=director, user_id=user_id)
+            # Send it to the DataManager to save it
+            data_manager.add_movie(new_movie)
+        except Exception as e:
+            print(f"Database Error occurred while adding movie: {e}")
+            return "Ups! Da gab es ein Problem mit der Datenbank.", 500
 
     # Redirect back to the user's movie list page
     return redirect(url_for('list_user_movies', user_id=user_id))
 
-
+# NEW: Custom Error Handler for 404 Page Not Found
+@app.errorhandler(404)
+def page_not_found(e):
+    # We return our template and explicitly send the 404 status code
+    return render_template('404.html'), 404
 
 
 # Create database tables and run the application
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Generates the tables inside movies.db if they don't exist yet
+    try:
+        with app.app_context():
+            db.create_all()  # Generates the tables inside movies.db if they don't exist yet
+        print("Database initialized successfully! 🦚")
+    except Exception as e:
+        print(f"CRITICAL ERROR: Could not initialize database: {e}")
+        
     app.run(debug=True)

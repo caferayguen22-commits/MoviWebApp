@@ -1,7 +1,8 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
+import requests
+from flask import Flask, render_template, request, redirect, url_for, abort
 from data_manager import DataManager
-from models import db
+from models import db, User, Movie
 
 # Base directory for proper database path routing
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -18,11 +19,16 @@ db.init_app(app)
 # Initialize the DataManager
 data_manager = DataManager()
 
+# OMDb API Key (Nutzt einen freien Standardschlüssel für die Abfrage)
+OMDB_API_KEY = "tt1285016&apikey=fc258950"
+
+
 # UPDATED: Home route now renders index.html with all users
 @app.route('/')
 def index():
     users = data_manager.get_user()
     return render_template('index.html', users=users)
+
 
 # NEW: Route to handle form submission for creating a user
 @app.route('/users', methods=['POST'])
@@ -32,43 +38,87 @@ def add_user():
         data_manager.create_user(user_name)
     return redirect(url_for('index'))
 
+
 # UPDATED: Real route to list all movies of a specific user
 @app.route('/users/<int:user_id>')
 def list_user_movies(user_id):
-    # We simply use the exact same logic as in our DataManager to get the user by ID
-    from models import User
-    user = User.query.get(user_id)
+    # Fetch user securely using the session helper
+    user = db.session.get(User, user_id)
+    if user is None:
+        abort(404)
 
     # Use DataManager to get all movies for this user through the Stargate
     movies = data_manager.get_movies(user_id)
     return render_template('movies.html', user=user, movies=movies)
 
-# NEW: Route to handle form submission for adding a movie to a user
+
+# NEW: Route to handle form submission for adding a movie to a user via OMDb API
 @app.route('/users/<int:user_id>/movies', methods=['POST'])
 def add_movie(user_id):
-    # Extract dat from the form fields
     title = request.form.get('title')
-    year = request.form.get('year')
-    director = request.form.get('director')
 
-    if title and year and director:
-        # Create a new Movie object from our models
-        from models import Movie
+    if title:
+        # Fetch data dynamically from the OMDb API using the movie title
         try:
-            new_movie = Movie(title=title, year=int(year), director=director, user_id=user_id)
-            # Send it to the DataManager to save it
-            data_manager.add_movie(new_movie)
-        except Exception as e:
-            print(f"Database Error occurred while adding movie: {e}")
-            return "Ups! Da gab es ein Problem mit der Datenbank.", 500
+            url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY.split('&apikey=')[1]}"
+            response = requests.get(url).json()
 
-    # Redirect back to the user's movie list page
+            if response.get('Response') == 'True':
+                api_title = response.get('Title', title)
+                # Extract year safely (handles ranges like '2015–2019')
+                raw_year = response.get('Year', '0000')
+                api_year = int(raw_year[:4]) if raw_year[:4].isdigit() else 0
+                api_director = response.get('Director', 'Unknown Director')
+                api_poster = response.get('Poster', '')
+
+                # Create a new Movie object with fetched data
+                new_movie = Movie(
+                    title=api_title,
+                    year=api_year,
+                    director=api_director,
+                    poster_url=api_poster,
+                    user_id=user_id
+                )
+                data_manager.add_movie(new_movie)
+            else:
+                print(f"Movie not found on OMDb API: {title}")
+        except Exception as e:
+            print(f"API or Database Error occurred while adding movie: {e}")
+            return "Ups! Da gab es ein Problem bei der Verarbeitung.", 500
+
     return redirect(url_for('list_user_movies', user_id=user_id))
+
+
+# NEW: Route to update a movie title using the DataManager
+@app.route('/movies/<int:movie_id>/update', methods=['POST'])
+def update_movie(movie_id):
+    movie = db.session.get(Movie, movie_id)
+    if not movie:
+        abort(404)
+
+    new_title = request.form.get('title')
+    if new_title:
+        data_manager.update_movie(movie_id, new_title)
+
+    return redirect(url_for('list_user_movies', user_id=movie.user_id))
+
+
+# NEW: Route to delete a movie using the DataManager
+@app.route('/movies/<int:movie_id>/delete', methods=['POST'])
+def delete_movie(movie_id):
+    movie = db.session.get(Movie, movie_id)
+    if not movie:
+        abort(404)
+
+    user_id = movie.user_id
+    data_manager.delete_movie(movie_id)
+
+    return redirect(url_for('list_user_movies', user_id=user_id))
+
 
 # NEW: Custom Error Handler for 404 Page Not Found
 @app.errorhandler(404)
 def page_not_found(e):
-    # We return our template and explicitly send the 404 status code
     return render_template('404.html'), 404
 
 
@@ -80,5 +130,6 @@ if __name__ == '__main__':
         print("Database initialized successfully! 🦚")
     except Exception as e:
         print(f"CRITICAL ERROR: Could not initialize database: {e}")
-        
-    app.run(debug=True)
+
+    # Adjusted host and port configuration to fully comply with Codio environment access
+    app.run(host='0.0.0.0', port=5002, debug=True)

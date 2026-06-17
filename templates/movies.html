@@ -11,20 +11,42 @@
 <h2 class="title is-4">Movie List</h2>
 {% if movies %}
     <div class="table-container">
-        <table class="table is-striped is-hoverable is-fullwidth">
+        <table class="table is-striped is-hoverable is-fullwidth" style="vertical-align: middle;">
             <thead>
                 <tr>
-                    <th>Title</th>
+                    <th>Poster</th>
+                    <th>Title / Update</th>
                     <th>Director</th>
                     <th>Year</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for movie in movies %}
                     <tr>
-                        <td class="has-text-weight-bold">{{ movie.title }}</td>
-                        <td>{{ movie.director }}</td>
-                        <td><span class="tag is-info is-light">{{ movie.year }}</span></td>
+                        <td style="vertical-align: middle;">
+                            {% if movie.poster_url and movie.poster_url != 'N/A' %}
+                                <img src="{{ movie.poster_url }}" alt="Poster" style="max-height: 80px; border-radius: 4px;">
+                            {% else %}
+                                <span class="tag is-light">No Poster</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="vertical-align: middle;">
+                            <form action="{{ url_for('update_movie', movie_id=movie.id) }}" method="post" class="is-flex">
+                                <input class="input is-small mr-2" type="text" name="title" value="{{ movie.title }}" required>
+                                <button type="submit" class="button is-small is-info is-light">Update</button>
+                            </form>
+                        </td>
+
+                        <td style="vertical-align: middle;">{{ movie.director }}</td>
+                        <td style="vertical-align: middle;"><span class="tag is-info is-light">{{ movie.year }}</span></td>
+
+                        <td style="vertical-align: middle;">
+                            <form action="{{ url_for('delete_movie', movie_id=movie.id) }}" method="post" onsubmit="return confirm('Möchtest du diesen Film wirklich löschen?');">
+                                <button type="submit" class="button is-small is-danger">Delete ❌</button>
+                            </form>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -38,36 +60,18 @@
 
 <hr>
 
-<h2 class="title is-4">Add a New Movie</h2>
+<h2 class="title is-4">Add a New Movie (via OMDb API)</h2>
 <form action="{{ url_for('add_movie', user_id=user.id) }}" method="post">
     <div class="field">
         <label class="label" for="title">Movie Title</label>
         <div class="control">
-            <input class="input" type="text" id="title" name="title" required placeholder="e.g. Inception">
+            <input class="input" type="text" id="title" name="title" required placeholder="e.g. Inception, The Matrix...">
         </div>
-    </div>
-
-    <div class="columns">
-        <div class="column">
-            <div class="field">
-                <label class="label" for="director">Director</label>
-                <div class="control">
-                    <input class="input" type="text" id="director" name="director" required placeholder="e.g. Christopher Nolan">
-                </div>
-            </div>
-        </div>
-        <div class="column">
-            <div class="field">
-                <label class="label" for="year">Release Year</label>
-                <div class="control">
-                    <input class="input" type="number" id="year" name="year" required placeholder="e.g. 2010">
-                </div>
-            </div>
-        </div>
+        <p class="help is-grey-light">Details wie Jahr, Regisseur und Poster werden automatisch abgerufen.</p>
     </div>
 
     <div class="control mt-4">
-        <button type="submit" class="button is-primary is-fullwidth">Add Movie</button>
+        <button type="submit" class="button is-primary is-fullwidth">Search & Add Movie</button>
     </div>
 </form>
 {% endblock %}

@@ -7,6 +7,9 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
 
+    # Beziehung zu den Filmen herstellen
+    movies = db.relationship('Movie', backref='user', lazy=True)
+
     # Hilfsmethode für eine saubere Textdarstellung im Terminal
     def __repr__(self):
         return f"<User {self.name}>"
